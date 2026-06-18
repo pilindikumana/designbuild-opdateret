@@ -1,0 +1,199 @@
+<!-- Din HTML er samme som før helt ned til script -->
+<!-- Erstat KUN hele <script>...</script> med dette: -->
+
+<script>
+let selectedDay = "";
+let selectedTime = "";
+let measurementIndex = 0;
+let measurements = [];
+
+let port;
+let reader;
+let writer;
+
+function selectDay(element) {
+  document.querySelectorAll(".day").forEach(day => day.classList.remove("selected"));
+  element.classList.add("selected");
+  selectedDay = element.innerText;
+  checkSelection();
+}
+
+function selectTime(element) {
+  document.querySelectorAll(".time").forEach(time => time.classList.remove("selected"));
+  element.classList.add("selected");
+  selectedTime = element.innerText;
+  checkSelection();
+}
+
+function checkSelection() {
+  if (selectedDay !== "" && selectedTime !== "") {
+    document.getElementById("startBtn").style.display = "inline-block";
+  }
+}
+
+async function connectArduino() {
+  if (!("serial" in navigator)) {
+    alert("Web Serial virker kun i Chrome eller Edge.");
+    return false;
+  }
+
+  port = await navigator.serial.requestPort();
+  await port.open({ baudRate: 9600 });
+
+  return true;
+}
+
+async function startPage() {
+  resetMeasurements();
+
+  document.getElementById("page1").classList.add("hidden");
+  document.getElementById("page2").classList.remove("hidden");
+
+  document.getElementById("title").innerHTML =
+    selectedDay + "<br>" + selectedTime;
+
+  document.getElementById("statusText").innerText =
+    "Tilslut Arduino og starter måling...";
+
+  await startArduinoMeasurement();
+}
+
+async function startArduinoMeasurement() {
+  try {
+    if (!port) {
+      let connected = await connectArduino();
+      if (!connected) return;
+    }
+
+    const textDecoder = new TextDecoderStream();
+    port.readable.pipeTo(textDecoder.writable);
+    reader = textDecoder.readable.getReader();
+
+    writer = port.writable.getWriter();
+    await writer.write(new TextEncoder().encode("START\n"));
+    writer.releaseLock();
+
+    document.getElementById("statusText").innerText =
+      "Arduino måler... vent til alle 3 målinger er færdige.";
+
+    let buffer = "";
+
+    while (true) {
+      const { value, done } = await reader.read();
+
+      if (done) break;
+
+      buffer += value;
+      let lines = buffer.split("\n");
+
+      buffer = lines.pop();
+
+      for (let line of lines) {
+        line = line.trim();
+
+        if (line === "") continue;
+
+        if (line === "FÆRDIG") {
+          reader.releaseLock();
+          calculateAverage();
+
+          document.getElementById("statusText").innerText =
+            "Alle målinger er færdige.";
+
+          document.getElementById("measureBtn").classList.add("hidden");
+          document.getElementById("againBtn").classList.remove("hidden");
+          document.getElementById("sendBtn").classList.remove("hidden");
+
+          return;
+        }
+
+        let parts = line.split(",");
+
+        if (parts.length === 3) {
+          let sys = Number(parts[0]);
+          let dia = Number(parts[1]);
+          let puls = Number(parts[2]);
+
+          measurementIndex++;
+
+          measurements.push({
+            sys: sys,
+            dia: dia,
+            puls: puls
+          });
+
+          let boxId = "m" + measurementIndex;
+
+          document.getElementById(boxId).classList.remove("empty");
+          document.getElementById(boxId).innerHTML = `
+            <p>${sys}</p>
+            <p>${dia}</p>
+            <p>${puls}</p>
+          `;
+
+          document.getElementById("statusText").innerText =
+            "Måling " + measurementIndex + " modtaget fra Arduino.";
+        }
+      }
+    }
+
+  } catch (error) {
+    console.error(error);
+    alert("Der skete en fejl med Arduino-forbindelsen.");
+  }
+}
+
+function calculateAverage() {
+  let sysAvg = Math.round(
+    measurements.reduce((sum, m) => sum + m.sys, 0) / measurements.length
+  );
+
+  let diaAvg = Math.round(
+    measurements.reduce((sum, m) => sum + m.dia, 0) / measurements.length
+  );
+
+  let pulsAvg = Math.round(
+    measurements.reduce((sum, m) => sum + m.puls, 0) / measurements.length
+  );
+
+  document.getElementById("average").innerHTML = `
+    Gennemsnit<br>
+    SYS: ${sysAvg} &nbsp; DIA: ${diaAvg} &nbsp; PULS: ${pulsAvg}
+  `;
+}
+
+function resetMeasurements() {
+  measurementIndex = 0;
+  measurements = [];
+
+  for (let i = 1; i <= 3; i++) {
+    document.getElementById("m" + i).classList.add("empty");
+    document.getElementById("m" + i).innerHTML = `
+      <p>-</p>
+      <p>-</p>
+      <p>-</p>
+    `;
+  }
+
+  document.getElementById("average").innerHTML = `
+    Gennemsnit<br>
+    (...)
+  `;
+
+  document.getElementById("statusText").innerText = "Klar til første måling";
+  document.getElementById("measureBtn").classList.remove("hidden");
+  document.getElementById("againBtn").classList.add("hidden");
+  document.getElementById("sendBtn").classList.add("hidden");
+}
+
+function goBack() {
+  resetMeasurements();
+
+  document.getElementById("page2").classList.add("hidden");
+  document.getElementById("page1").classList.remove("hidden");
+}
+
+function sendToDoctor() {
+  alert("Målingerne er sendt til lægen.");
+}
+</script>
