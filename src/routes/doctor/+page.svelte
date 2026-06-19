@@ -158,7 +158,7 @@
 			<select id="patientSelect" bind:value={selectedPatientId}>
 				<option value={null}>-- Vælg en patient --</option>
 				{#each data.patients as p (p.id)}
-					<option value={p.id}>{p.name} (ID: {p.id})</option>
+					<option value={p.id}>{p.name}</option>
 				{/each}
 			</select>
 		</div>
