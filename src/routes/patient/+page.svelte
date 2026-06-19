@@ -138,9 +138,18 @@
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({
 					patientId,
+					measurements: measurements
+						.filter((measurement) => measurement.sys !== '-')
+						.map((measurement, index) => ({
+							systolic: measurement.sys,
+							diastolic: measurement.dia,
+							pulse: measurement.puls,
+							note: `${selectedDay} ${selectedTime} - måling ${index + 1}`
+						})),
 					systolic: average.sys,
 					diastolic: average.dia,
-					pulse: average.puls
+					pulse: average.puls,
+					note: `${selectedDay} ${selectedTime} - gennemsnit`
 				})
 			});
 

@@ -1,7 +1,7 @@
 import { SerialPort } from 'serialport';
 import { ReadlineParser } from '@serialport/parser-readline';
 
-const ARDUINO_PORT = 'COM3';
+const ARDUINO_PORT = '/dev/cu.usbmodem101';
 
 export async function POST() {
 	const encoder = new TextEncoder();

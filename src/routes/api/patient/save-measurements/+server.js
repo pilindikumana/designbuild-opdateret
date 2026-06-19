@@ -10,6 +10,21 @@ function parseNumber(value) {
 	return Number.isFinite(number) ? number : null;
 }
 
+function parseMeasurement(measurement) {
+	const systolic = parseNumber(measurement.systolic);
+	const diastolic = parseNumber(measurement.diastolic);
+	const pulse = parseNumber(measurement.pulse);
+
+	if (!systolic || !diastolic) return null;
+
+	return {
+		systolic,
+		diastolic,
+		pulse,
+		note: measurement.note ?? null
+	};
+}
+
 async function getPatientIdFromSession(cookies) {
 	const token = cookies.get('session');
 	if (!token) return null;
@@ -37,15 +52,17 @@ export async function POST({ request, cookies }) {
 		const body = await request.json();
 		const sessionPatientId = await getPatientIdFromSession(cookies);
 		const patientId = sessionPatientId ?? parseNumber(body.patientId);
-		const systolic = parseNumber(body.systolic);
-		const diastolic = parseNumber(body.diastolic);
-		const pulse = parseNumber(body.pulse);
+		const measurements = Array.isArray(body.measurements)
+			? body.measurements.map(parseMeasurement).filter(Boolean)
+			: [];
 
-		if (!patientId || !systolic || !diastolic) {
-			return json(
-				{ error: 'Patient, systolisk og diastolisk værdi skal være gyldige tal' },
-				{ status: 400 }
-			);
+		if (measurements.length === 0) {
+			const singleMeasurement = parseMeasurement(body);
+			if (singleMeasurement) measurements.push(singleMeasurement);
+		}
+
+		if (!patientId || measurements.length === 0) {
+			return json({ error: 'Patient og mindst én måling skal være gyldige' }, { status: 400 });
 		}
 
 		const patientExists = await db
@@ -58,17 +75,20 @@ export async function POST({ request, cookies }) {
 			return json({ error: 'Patienten findes ikke i databasen' }, { status: 404 });
 		}
 
+		const now = new Date().toISOString();
 		const inserted = await db
 			.insert(bloodPressureMeasurement)
-			.values({
-				patientId,
-				systolic,
-				diastolic,
-				pulse
-			})
+			.values(
+				measurements.map((measurement) => ({
+					...measurement,
+					patientId,
+					measuredAt: now,
+					createdAt: now
+				}))
+			)
 			.returning();
 
-		return json({ success: true, measurement: inserted[0] }, { status: 201 });
+		return json({ success: true, measurements: inserted }, { status: 201 });
 	} catch (error) {
 		console.error('Fejl ved gemning af målinger:', error);
 		return json({ error: error.message }, { status: 500 });
