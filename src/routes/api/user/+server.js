@@ -2,13 +2,12 @@ import { json } from '@sveltejs/kit';
 import { db } from '$lib/server/db';
 import { patient, user } from '$lib/server/db/schema.js';
 import bcrypt from 'bcryptjs';
-import { eq } from 'drizzle-orm'; // Tilføjet til filtrering i databasen
+import { eq } from 'drizzle-orm';
 
 export async function POST({ request }) {
 	try {
 		const { username, password, role } = await request.json();
 
-		// 1. Basal validering
 		if (!username || !password || !role) {
 			return json(
 				{ error: 'Alle felter (brugernavn, adgangskode og rolle) skal udfyldes' },
@@ -16,10 +15,8 @@ export async function POST({ request }) {
 			);
 		}
 
-		// 2. Hash adgangskoden
 		const hashedPass = await bcrypt.hash(password, 10);
 
-		// 3. Indsæt brugeren i databasen
 		const createdUserArray = await db
 			.insert(user)
 			.values({
@@ -31,8 +28,6 @@ export async function POST({ request }) {
 
 		const createdUser = createdUserArray[0];
 
-		// Patient-login skal også have en række i patient-tabellen,
-		// fordi lægesiden og målingerne bruger patient.id.
 		if (role === 'patient') {
 			await db.insert(patient).values({
 				userId: createdUser.id,
@@ -55,7 +50,6 @@ export async function POST({ request }) {
 	}
 }
 
-// HENTER ALLE BRUGERE FRA DATABASEN SOM ER PATIENTER
 export async function GET() {
 	try {
 		const patienter = await db

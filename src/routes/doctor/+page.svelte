@@ -2,7 +2,6 @@
 	import { invalidateAll } from '$app/navigation';
 	import { onMount } from 'svelte';
 
-	// Vi modtager både patienter og målinger fra serveren
 	let { data } = $props();
 
 	let selectedPatientId = $state(null);
@@ -13,7 +12,6 @@
 		}
 	});
 
-	// Filtrer målingerne så kun dem for den valgte patient vises
 	let filteredMeasurements = $derived(
 		data.measurements.filter((m) => Number(m.patientId) === Number(selectedPatientId))
 	);

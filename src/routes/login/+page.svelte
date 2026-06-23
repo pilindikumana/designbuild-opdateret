@@ -7,7 +7,7 @@
 	let errorMessage = $state('');
 
 	const login = async () => {
-		errorMessage = ''; // Nulstil fejlbeskeder ved nyt forsøg
+		errorMessage = '';
 
 		try {
 			const response = await fetch('/api/login', {
@@ -19,17 +19,13 @@
 			const data = await response.json();
 
 			if (response.ok) {
-				// Tjek rollen og send brugeren videre til den rigtige side
 				if (data.role === 'patient') {
-					// Gemmer værdien fra 'username' feltet i localStorage til brug på patientsiden
 					localStorage.setItem('patientName', username);
 					localStorage.setItem('patientId', String(data.patientId));
 
-					/* eslint-disable-next-line svelte/no-navigation-without-resolve */
-					goto('/patient');
+					goto(resolve('/patient'));
 				} else if (data.role === 'sundhedsprofessionel') {
-					/* eslint-disable-next-line svelte/no-navigation-without-resolve */
-					goto('/doctor');
+					goto(resolve('/doctor'));
 				} else {
 					errorMessage = 'Ukendt systemrolle: ' + data.role;
 				}

@@ -6,10 +6,8 @@ import { desc } from 'drizzle-orm';
 export async function load({ cookies }) {
 	requireRole(cookies, 'sundhedsprofessionel');
 
-	// Hent alle patienter
 	const allPatients = await db.select().from(patient);
 
-	// Hent alle målinger
 	const allMeasurements = await db
 		.select()
 		.from(bloodPressureMeasurement)

@@ -167,7 +167,6 @@
 
   <div class="device">
 
-    <!-- SIDE 1 -->
     <div id="page1">
       <h1>Velkommen</h1>
 
@@ -191,7 +190,6 @@
       </button>
     </div>
 
-    <!-- SIDE 2 -->
     <div id="page2" class="hidden">
       <h2 id="title">Dag 1<br>Morgen</h2>
 

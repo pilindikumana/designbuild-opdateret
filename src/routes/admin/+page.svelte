@@ -1,5 +1,4 @@
 <script>
-	// Fjernet ubrugt import af createSubscriber for at undgå advarsler
 	let username = $state('');
 	let password = $state('');
 	let role = $state('');
@@ -23,12 +22,10 @@
 
 			if (response.ok) {
 				alert('Bruger oprettet succesfuldt!');
-				// Nulstil felterne efter succes
 				username = '';
 				password = '';
 				role = '';
 			} else {
-				// Hvis serveren sender en fejlbesked med ({ error: '...' })
 				alert('Fejl ved oprettelse: ' + (data.error || 'Ukendt fejl på serveren'));
 			}
 		} catch (error) {

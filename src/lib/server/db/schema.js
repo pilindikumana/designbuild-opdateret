@@ -1,15 +1,13 @@
 import { sqliteTable, text, integer } from 'drizzle-orm/sqlite-core';
 
-// 1. User-tabel (Til login og roller)
 export const user = sqliteTable('user', {
 	id: integer('id').primaryKey({ autoIncrement: true }),
 	username: text('username').notNull().unique(),
 	password: text('password').notNull(),
-	role: text('role').notNull(), // 'patient', 'sundhedsprofessionel' (læge)
+	role: text('role').notNull(),
 	createdAt: text('created_at').default('CURRENT_TIMESTAMP')
 });
 
-// 2. Patient-tabel (Stamdata om patienten)
 export const patient = sqliteTable('patient', {
 	id: integer('id').primaryKey({ autoIncrement: true }),
 	userId: integer('user_id').references(() => user.id, { onDelete: 'SET NULL' }),
@@ -21,7 +19,6 @@ export const patient = sqliteTable('patient', {
 	createdAt: text('created_at').default('CURRENT_TIMESTAMP')
 });
 
-// 3. Blodtryksmålinger (Forbundet til Patient-tabellen)
 export const bloodPressureMeasurement = sqliteTable('blood_pressure_measurement', {
 	id: integer('id').primaryKey({ autoIncrement: true }),
 	patientId: integer('patient_id')
@@ -35,7 +32,6 @@ export const bloodPressureMeasurement = sqliteTable('blood_pressure_measurement'
 	createdAt: text('created_at').default('CURRENT_TIMESTAMP')
 });
 
-// 4. Feedback-tabel (Lægens beskeder til patienten)
 export const feedback = sqliteTable('feedback', {
 	id: integer('id').primaryKey({ autoIncrement: true }),
 	patientId: integer('patient_id')

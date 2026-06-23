@@ -14,7 +14,6 @@ export async function POST({ request, cookies }) {
 			return json({ error: 'Brugernavn og adgangskode skal udfyldes' }, { status: 400 });
 		}
 
-		// Find brugeren i databasen ved hjælp af standard Drizzle select
 		const rows = await db.select().from(user).where(eq(user.username, username)).limit(1);
 		const userData = rows[0];
 
@@ -22,7 +21,6 @@ export async function POST({ request, cookies }) {
 			return json({ error: 'Forkert brugernavn eller adgangskode' }, { status: 401 });
 		}
 
-		// Tjek om adgangskoden matcher det krypterede hash
 		const isPasswordValid = await bcrypt.compare(password, userData.password);
 		if (!isPasswordValid) {
 			return json({ error: 'Forkert brugernavn eller adgangskode' }, { status: 401 });
@@ -52,7 +50,6 @@ export async function POST({ request, cookies }) {
 			}
 		}
 
-		// Generer JWT Token. Vi bruger en fallback-streng hvis .env ikke er sat op endnu
 		const secret = env.JWT_SECRET || 'super-secret-fallback-key-dtu-project';
 		const token = jwt.sign(
 			{ userId: userData.id, username: userData.username, role: userData.role, patientId },
@@ -60,12 +57,11 @@ export async function POST({ request, cookies }) {
 			{ expiresIn: '1h' }
 		);
 
-		// Gem session-cookien i browseren
 		cookies.set('session', token, {
 			path: '/',
 			httpOnly: true,
 			sameSite: 'strict',
-			maxAge: 60 * 60 // 1 time
+			maxAge: 60 * 60
 		});
 
 		return json({ message: 'Login successful', role: userData.role, patientId }, { status: 200 });
